@@ -25,6 +25,9 @@ export class NodeProcessor {
 
 	/**
 	 * Processes all input items
+	 * @param executeFunctions - N8N execution context
+	 * @param items - Input data items to process
+	 * @returns Array of processed items
 	 */
 	async processItems(
 		executeFunctions: IExecuteFunctions,
@@ -39,7 +42,24 @@ export class NodeProcessor {
 			if (result.success && result.data) {
 				results.push(result.data);
 			} else if (result.error) {
-				this.handleError(executeFunctions, result.error, context.parameters.errorHandling);
+				if (context.parameters.errorHandling === 'stop') {
+					this.handleError(executeFunctions, result.error, context.parameters.errorHandling);
+				} else {
+					// For 'continue' mode, add error information to the output
+					const errorItem: INodeExecutionData = {
+						json: {
+							[context.parameters.outputField]: null,
+							error: {
+								message: result.error.message,
+								itemIndex: result.error.itemIndex,
+								type: 'JSON_SANITIZATION_ERROR',
+							},
+							...(context.parameters.keepOriginal ? context.item.json : {}),
+						},
+						pairedItem: { item: itemIndex },
+					};
+					results.push(errorItem);
+				}
 			}
 		}
 
@@ -48,6 +68,10 @@ export class NodeProcessor {
 
 	/**
 	 * Creates processing context for a single item
+	 * @param executeFunctions - N8N execution context
+	 * @param item - The input data item
+	 * @param itemIndex - Index of the current item
+	 * @returns Processing context with parameters and item data
 	 */
 	private createProcessingContext(
 		executeFunctions: IExecuteFunctions,
@@ -70,7 +94,9 @@ export class NodeProcessor {
 	}
 
 	/**
-	 * Processes a single item
+	 * Processes a single item through sanitization pipeline
+	 * @param context - Processing context containing item and parameters
+	 * @returns Processing result with success/error status
 	 */
 	private async processItem(context: ProcessingContext): Promise<ProcessingResult> {
 		try {
@@ -93,6 +119,9 @@ export class NodeProcessor {
 
 	/**
 	 * Processes input value based on the selected output mode
+	 * @param inputValue - The value to process
+	 * @param parameters - Node configuration parameters
+	 * @returns Sanitization result
 	 */
 	private processInputValue(inputValue: unknown, parameters: NodeParameters): SanitizeResult {
 		if (parameters.outputMode === 'repair') {
@@ -108,24 +137,45 @@ export class NodeProcessor {
 	}
 
 	/**
-	 * Extracts input value from the specified field
+	 * Extracts input value from the specified field, supporting dot notation
+	 * @param context - Processing context containing item and field information
+	 * @returns Extracted value from the specified field
+	 * @throws Error if field is not found or path is invalid
 	 */
 	private extractInputValue(context: ProcessingContext): unknown {
-		let value: unknown = (context.item.json as Record<string, unknown>)[context.parameters.inputField];
+		const fieldPath = context.parameters.inputField;
+		let value: unknown = context.item.json;
 
 		// Handle dot notation (e.g., 'body.content')
-		if (context.parameters.inputField.includes('.')) {
-			const parts = context.parameters.inputField.split('.');
-			let current: unknown = context.item.json as Record<string, unknown>;
+		if (fieldPath.includes('.')) {
+			const parts = fieldPath.split('.');
+			let current: unknown = context.item.json;
 
-			for (const key of parts) {
-				current = (current as Record<string, unknown>)?.[key];
+			for (const [index, key] of parts.entries()) {
+				if (current === null || current === undefined) {
+					const pathSoFar = parts.slice(0, index).join('.');
+					throw new Error(
+						`Field path '${fieldPath}' is invalid: '${pathSoFar}' resolves to ${current}`
+					);
+				}
+
+				if (typeof current !== 'object') {
+					const pathSoFar = parts.slice(0, index).join('.');
+					throw new Error(
+						`Field path '${fieldPath}' is invalid: '${pathSoFar}' is not an object`
+					);
+				}
+
+				current = (current as Record<string, unknown>)[key];
 			}
 			value = current;
+		} else {
+			// Simple field access
+			value = (context.item.json as Record<string, unknown>)[fieldPath];
 		}
 
 		if (value === undefined || value === null) {
-			throw new Error(`Field '${context.parameters.inputField}' not found in input data`);
+			throw new Error(`Field '${fieldPath}' not found in input data`);
 		}
 
 		return value;
@@ -133,6 +183,10 @@ export class NodeProcessor {
 
 	/**
 	 * Prepares output data based on the selected mode
+	 * @param sanitizeResult - Result from sanitization process
+	 * @param parameters - Node configuration parameters
+	 * @returns Formatted output data according to selected mode
+	 * @throws Error for unknown output modes
 	 */
 	private prepareOutputData(sanitizeResult: SanitizeResult, parameters: NodeParameters): unknown {
 		switch (parameters.outputMode) {
@@ -161,7 +215,10 @@ export class NodeProcessor {
 	}
 
 	/**
-	 * Creates the result item with proper structure
+	 * Creates the result item with proper structure for N8N
+	 * @param outputData - The processed output data
+	 * @param context - Processing context with original item and parameters
+	 * @returns N8N execution data item
 	 */
 	private createResultItem(outputData: unknown, context: ProcessingContext): INodeExecutionData {
 		const { item, itemIndex, parameters } = context;
@@ -177,6 +234,10 @@ export class NodeProcessor {
 
 	/**
 	 * Handles errors based on the error handling mode
+	 * @param executeFunctions - N8N execution context
+	 * @param error - Error details with message and item index
+	 * @param errorHandling - How to handle the error (stop or continue)
+	 * @throws NodeOperationError if errorHandling is 'stop'
 	 */
 	private handleError(
 		executeFunctions: IExecuteFunctions,

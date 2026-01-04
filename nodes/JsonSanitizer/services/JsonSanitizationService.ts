@@ -4,7 +4,11 @@
 
 import { SanitizeResult } from '../types';
 
-// Basic JSON repair functionality (no external dependencies)
+/**
+ * Basic JSON repair functionality for cases where jsonrepair might not be available
+ * @param input - The input string to repair
+ * @returns Repaired JSON string
+ */
 function basicJsonRepair(input: string): string {
 	let repaired = input.trim();
 
@@ -61,6 +65,8 @@ export class JsonSanitizationService {
 
 	/**
 	 * Validates input before processing
+	 * @param input - The input to validate
+	 * @throws Error if input is null, undefined, or empty string
 	 */
 	private validateInput(input: unknown): void {
 		if (input === null || input === undefined || input === '') {
@@ -69,7 +75,9 @@ export class JsonSanitizationService {
 	}
 
 	/**
-	 * Handles already parsed objects
+	 * Handles already parsed objects by stringifying them
+	 * @param input - The parsed object to handle
+	 * @returns Sanitization result with parsed object data
 	 */
 	private handleParsedObject(input: object): SanitizeResult {
 		return {
@@ -94,15 +102,13 @@ export class JsonSanitizationService {
 
 		this.validateInput(input);
 
-		// For repair mode, we use basic repair functionality
-		// This handles common JSON issues without external dependencies
-
+		// Use basic JSON repair for n8n Cloud compatibility
 		try {
 			const repairedString = basicJsonRepair(input);
 			const parsed = JSON.parse(repairedString);
 
 			// Check if repair actually changed anything
-			const wasRepaired = repairedString !== input;
+			const wasRepaired = repairedString !== input.trim();
 
 			return {
 				cleanedString: repairedString,
@@ -111,20 +117,25 @@ export class JsonSanitizationService {
 				wasAlreadyParsed: false,
 				wasRepaired,
 			};
-		} catch (repairError) {
-			// If basic repair fails, try normal sanitization as fallback
+		} catch (basicRepairError) {
+			// If basic repair fails, try normal sanitization as final fallback
 			try {
 				return this.sanitizeString(input);
 			} catch (sanitizeError) {
-				// If both fail, throw the repair error
+				// If both methods fail, provide comprehensive error
 				throw new Error(
-					`Failed to repair JSON: ${repairError.message}\n\nOriginal sanitization error: ${sanitizeError.message}`
+					`Failed to repair JSON with all methods:\n` +
+					`- Basic repair error: ${(basicRepairError as Error).message}\n` +
+					`- Sanitization error: ${(sanitizeError as Error).message}`
 				);
 			}
 		}
 	}
 	/**
 	 * Sanitizes string input through multiple cleaning steps
+	 * @param input - The string to sanitize
+	 * @returns Sanitization result with cleaned data
+	 * @throws Error if sanitization fails
 	 */
 	private sanitizeString(input: string): SanitizeResult {
 		let cleaned = input;
@@ -150,14 +161,29 @@ export class JsonSanitizationService {
 		};
 	}
 
+	/**
+	 * Removes Byte Order Mark (BOM) from the beginning of input
+	 * @param input - The input string
+	 * @returns String without BOM
+	 */
 	private removeBOM(input: string): string {
 		return input.charCodeAt(0) === 0xFEFF ? input.slice(1) : input;
 	}
 
+	/**
+	 * Trims whitespace from beginning and end of input
+	 * @param input - The input string
+	 * @returns Trimmed string
+	 */
 	private trimWhitespace(input: string): string {
 		return input.trim();
 	}
 
+	/**
+	 * Removes markdown code fences (```json and ```)
+	 * @param input - The input string
+	 * @returns String without markdown fences
+	 */
 	private removeMarkdownFences(input: string): string {
 		return input
 			.replace(/^```\s*json\s*\n?/i, '')
@@ -166,6 +192,11 @@ export class JsonSanitizationService {
 			.trim();
 	}
 
+	/**
+	 * Handles doubly-escaped JSON strings by unescaping them
+	 * @param input - The input string that might be doubly-escaped
+	 * @returns Unescaped string or original input if not doubly-escaped
+	 */
 	private handleDoublyEscapedJSON(input: string): string {
 		if (!input.startsWith('"')) return input;
 
@@ -187,27 +218,48 @@ export class JsonSanitizationService {
 		return input;
 	}
 
+	/**
+	 * Removes trailing commas before closing brackets or braces
+	 * @param input - The input string
+	 * @returns String without trailing commas
+	 */
 	private removeTrailingCommas(input: string): string {
 		return input.replace(/,(\s*[}\]])/g, '$1');
 	}
 
+	/**
+	 * Removes both single-line and multi-line comments from JSON
+	 * @param input - The input string
+	 * @returns String without comments
+	 */
 	private removeComments(input: string): string {
 		return input
 			.replace(/\/\*[\s\S]*?\*\//g, '')
 			.replace(/\/\/.*/g, '');
 	}
 
+	/**
+	 * Normalizes line endings to Unix-style (\n)
+	 * @param input - The input string
+	 * @returns String with normalized line endings
+	 */
 	private normalizeLineEndings(input: string): string {
 		return input.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 	}
 
+	/**
+	 * Parses JSON string with enhanced error reporting
+	 * @param input - The JSON string to parse
+	 * @returns Parsed object
+	 * @throws Error with preview if parsing fails
+	 */
 	private parseJSON(input: string): unknown {
 		try {
 			return JSON.parse(input);
 		} catch (error) {
-			const preview = input.substring(0, 200);
+			const preview = input.length > 200 ? input.substring(0, 200) + '...' : input;
 			throw new Error(
-				`Failed to parse JSON after sanitization: ${error.message}\n\nCleaned string preview: ${preview}...`
+				`Failed to parse JSON after sanitization: ${(error as Error).message}\n\nCleaned string preview: ${preview}`
 			);
 		}
 	}

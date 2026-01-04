@@ -10,15 +10,17 @@ import { nodeProperties } from './config/nodeProperties';
 
 /**
  * N8N node for sanitizing and normalizing JSON data from various input formats
+ * Provides comprehensive JSON cleaning, validation, and repair capabilities
  */
 export class JsonSanitizer implements INodeType {
+	/** N8N node type description and configuration */
 	description: INodeTypeDescription = {
 		displayName: 'JSON Sanitizer',
 		name: 'jsonSanitizer',
-		icon: { light: 'file:JsonSanitizer.svg', dark: 'file:JsonSanitizer.dark.svg' },
+		icon: 'file:JsonSanitizer.svg',
 		group: ['transform'],
 		version: 1,
-		description: 'Sanitize and normalize JSON strings from various formats',
+		description: 'Sanitize, clean, and repair JSON data from various input formats including malformed JSON, escaped strings, and markdown-wrapped JSON',
 		defaults: {
 			name: 'JSON Sanitizer',
 		},

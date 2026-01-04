@@ -1,11 +1,12 @@
 /**
- * Node configuration and properties
+ * Node configuration and properties for JSON Sanitizer node
+ * Defines the user interface and parameter structure
  */
 
 import { INodeProperties } from 'n8n-workflow';
 
 /**
- * Node properties configuration
+ * Node properties configuration with comprehensive validation and descriptions
  */
 export const nodeProperties: INodeProperties[] = [
 	{
@@ -14,9 +15,9 @@ export const nodeProperties: INodeProperties[] = [
 		type: 'string',
 		default: 'json',
 		required: true,
-		description: 'The field containing the JSON string or object to sanitize',
-		placeholder: 'e.g., data or body.content',
-		noDataExpression: true,
+		description: 'The field containing the JSON string or object to sanitize. Supports dot notation for nested fields (e.g., "data.body.content").',
+		placeholder: 'e.g., json, data, body.content, response.data',
+		noDataExpression: false,
 	},
 	{
 		displayName: 'Output Mode',
@@ -26,26 +27,26 @@ export const nodeProperties: INodeProperties[] = [
 			{
 				name: 'Parsed Object',
 				value: 'parsed',
-				description: 'Output the parsed JSON as an object',
+				description: 'Return only the parsed JSON as a clean object',
 			},
 			{
 				name: 'Cleaned String',
 				value: 'string',
-				description: 'Output the sanitized JSON as a string',
+				description: 'Return the sanitized JSON as a properly formatted string',
 			},
 			{
-				name: 'Both (Detailed)',
+				name: 'Both (with Metadata)',
 				value: 'both',
-				description: 'Output both parsed object and metadata',
+				description: 'Return both parsed object and metadata including original type and processing details',
 			},
 			{
 				name: 'Smart Repair',
 				value: 'repair',
-				description: 'Attempt to automatically fix malformed JSON',
+				description: 'Attempt to automatically fix malformed JSON using advanced repair techniques',
 			},
 		],
 		default: 'parsed',
-		description: 'How to output the sanitized JSON',
+		description: 'Choose how the sanitized JSON should be returned. "Smart Repair" is best for malformed or broken JSON.',
 	},
 	{
 		displayName: 'Output Field Name',
@@ -53,15 +54,16 @@ export const nodeProperties: INodeProperties[] = [
 		type: 'string',
 		default: 'sanitized',
 		required: true,
-		description: 'The field name to store the sanitized result',
-		noDataExpression: true,
+		description: 'The field name where the sanitized result will be stored in the output',
+		placeholder: 'e.g., sanitized, cleanJson, result',
+		noDataExpression: false,
 	},
 	{
-		displayName: 'Keep Original',
+		displayName: 'Keep Original Data',
 		name: 'keepOriginal',
 		type: 'boolean',
 		default: false,
-		description: 'Whether to keep the original input field in the output',
+		description: 'Whether to preserve all original input fields in the output alongside the sanitized result',
 	},
 	{
 		displayName: 'Error Handling',
@@ -71,15 +73,15 @@ export const nodeProperties: INodeProperties[] = [
 			{
 				name: 'Stop Workflow',
 				value: 'stop',
-				description: 'Stop the workflow if sanitization fails',
+				description: 'Stop the entire workflow execution if sanitization fails for any item',
 			},
 			{
 				name: 'Continue with Error Info',
 				value: 'continue',
-				description: 'Continue and add error information to output',
+				description: 'Continue processing and include error information in the output for failed items',
 			},
 		],
 		default: 'stop',
-		description: 'How to handle sanitization errors',
+		description: 'How to handle cases where JSON sanitization fails. "Continue" mode adds error details to output.',
 	},
 ];
