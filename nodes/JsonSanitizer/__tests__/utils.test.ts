@@ -54,6 +54,58 @@ describe('sanitizeJSON', () => {
 			expect(result.cleanedString).toBe('{"test": "value"}');
 		});
 
+		test('should handle complex JSON with markdown fences', () => {
+			const input = '```json\n{\n  "status": "fail",\n  "score": {\n    "overall_0_to_100": 40,\n    "truthfulness_0_to_100": 0,\n    "ats_compliance_0_to_100": 80,\n    "keyword_coverage_0_to_100": 90,\n    "hiring_manager_clarity_0_to_100": 90\n  },\n  "issues": [\n    {\n      "severity": "high",\n      "type": "invented_claim",\n      "location": "header",\n      "problem": "Entire candidate profile and experience cannot be validated against master resume",\n      "evidence": "CANDIDATE_MASTER_RESUME_JSON contains only \'1.2\' - no candidate data available for validation",\n      "fix": "Provide complete CANDIDATE_MASTER_RESUME_JSON with actual candidate experience and skills"\n    },\n    {\n      "severity": "high",\n      "type": "invented_claim",\n      "location": "summary",\n      "problem": "All summary claims unvalidated against master resume",\n      "evidence": "\'10+ years delivering scalable C#/.NET and SQL Server applications\' - master resume unavailable",\n      "fix": "Remove unvalidated claims until master resume provided"\n    },\n    {\n      "severity": "high",\n      "type": "invented_claim",\n      "location": "experience",\n      "problem": "All experience bullets and companies unvalidated against master resume",\n      "evidence": "Beeplife Inc., Phoner.ir, Doordast, Shatel - no master resume to verify existence or details",\n      "fix": "Remove all experience until validated against master resume"\n    }\n  ],\n  "patch_instructions": {\n    "priority_fixes": [\n      "Provide complete CANDIDATE_MASTER_RESUME_JSON for validation",\n      "Remove all unvalidated experience, skills, and claims"\n    ],\n    "allowed_edits": [],\n    "forbidden_edits": [\n      "add_new_skill_not_in_master",\n      "add_new_metrics",\n      "change_employers_titles_dates",\n      "invent_certifications",\n      "add_any_content_without_master_validation"\n    ],\n    "change_budget": {\n      "max_bullets_to_edit": 0,\n      "max_new_skills_to_surface": 0,\n      "max_total_edits": 0\n    }\n  },\n  "must_have_coverage": {\n    "present_in_skills": ["C#", ".NET", "SQL", "Git", "GitHub"],\n    "present_in_experience": ["C#", ".NET", "SQL", "GitHub", "Git"],\n    "missing_but_in_master": [],\n    "missing_and_not_in_master": []\n  }\n}\n```';
+			const result = sanitizeJSON(input);
+
+			const parsed = result.parsed as any;
+			expect(parsed.status).toBe('fail');
+			expect(parsed.score.overall_0_to_100).toBe(40);
+			expect(parsed.issues).toHaveLength(3);
+			expect(result.wasAlreadyParsed).toBe(false);
+		});
+
+		test('should handle JSON with control characters in repair mode', () => {
+			const input = '{"url": "https://example.com\ninvalid"}';
+			const result = repairJSON(input);
+
+			const parsed = result.parsed as any;
+			expect(parsed.url).toBe('https://example.com\ninvalid');
+			expect(result.wasRepaired).toBe(true);
+		});
+
+		test('should handle malformed job listings JSON with truncated URLs', () => {
+			const input = '[ { "id": "item-12345", "source": "example", "url": "https: ", "direct_url": "https: ", "name": "Sample Item", "provider": "Example Corp"...';
+			const result = sanitizeJSON(input);
+
+			const parsed = result.parsed as any;
+			expect(Array.isArray(parsed)).toBe(true);
+			expect(parsed[0].id).toBe('item-12345');
+			expect(parsed[0].source).toBe('example');
+			expect(result.wasAlreadyParsed).toBe(false);
+		});
+
+		test('should parse stdout from external command output', () => {
+			// Simulate the content from m.json - external command output with stdout containing JSON
+			const commandOutput = [
+				{
+					"exitCode": 0,
+					"stderr": "2026-01-04 19:16:04,057 - INFO - SampleService - operation completed",
+					"stdout": '[ { "id": "item-12345", "source": "example", "url": "https: ", "direct_url": "https: ", "name": "Sample Item", "provider": "Example Corp"...'
+				}
+			];
+
+			// Extract stdout and sanitize it
+			const stdoutContent = commandOutput[0].stdout;
+			const result = sanitizeJSON(stdoutContent);
+
+			const parsed = result.parsed as any;
+			expect(Array.isArray(parsed)).toBe(true);
+			expect(parsed[0].id).toBe('item-12345');
+			expect(parsed[0].source).toBe('example');
+			expect(result.wasAlreadyParsed).toBe(false);
+		});
+
 		test('should handle trailing commas', () => {
 			const input = '{"test": "value",}';
 			const result = sanitizeJSON(input);
@@ -104,14 +156,22 @@ describe('sanitizeJSON', () => {
 			expect(() => sanitizeJSON(true)).toThrow('Input must be a string or object');
 		});
 
-		test('should throw error for invalid JSON string', () => {
+		test('should handle invalid JSON string using jsonrepair fallback', () => {
 			const input = '{"invalid": json}';
-			expect(() => sanitizeJSON(input)).toThrow('Failed to parse JSON after sanitization');
+			const result = sanitizeJSON(input);
+
+			const parsed = result.parsed as any;
+			expect(parsed.invalid).toBe('json');
+			expect(result.wasAlreadyParsed).toBe(false);
 		});
 
-		test('should throw error for unparseable doubly-escaped JSON', () => {
+		test('should handle unparseable doubly-escaped JSON using jsonrepair fallback', () => {
 			const input = '"{\\"invalid\\": json}"';
-			expect(() => sanitizeJSON(input)).toThrow('Failed to parse JSON after sanitization');
+			const result = sanitizeJSON(input);
+
+			const parsed = result.parsed as any;
+			expect(parsed.invalid).toBe('json');
+			expect(result.wasAlreadyParsed).toBe(false);
 		});
 	});
 

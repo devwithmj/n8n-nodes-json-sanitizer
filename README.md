@@ -82,3 +82,4 @@ The node supports dot notation for nested fields (e.g., `body.content`) and can 
 
 - 0.1.0: Initial release with basic JSON sanitization features
 - 0.1.1: Refactored to clean, layered architecture with improved maintainability
+- 0.1.2: Switched to jsonrepair for robust JSON repair; updated tests and improved fallback for unparseable input.
