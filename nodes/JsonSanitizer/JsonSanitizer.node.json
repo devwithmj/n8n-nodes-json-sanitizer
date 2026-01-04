@@ -4,14 +4,9 @@
 	"codexVersion": "1.0",
 	"categories": ["Development", "Developer Tools"],
 	"resources": {
-		"credentialDocumentation": [
-			{
-				"url": "https://github.com/org/repo?tab=readme-ov-file#credentials"
-			}
-		],
 		"primaryDocumentation": [
 			{
-				"url": "https://github.com/org/repo?tab=readme-ov-file"
+				"url": "https://github.com/devwithmj/n8n-nodes-json-sanitizer#readme"
 			}
 		]
 	}

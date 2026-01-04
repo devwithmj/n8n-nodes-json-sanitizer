@@ -10,13 +10,14 @@ The JSON Sanitizer node can handle:
 - JavaScript-style comments (// and /* */)
 - Inconsistent line endings
 - Already parsed JSON objects
+- **Smart Repair**: Automatically fix malformed JSON using the jsonrepair library
 
 ## Architecture
 
 This project follows a clean, layered architecture that separates concerns for better maintainability and testability:
 
 - **Types Layer**: Centralized type definitions and interfaces
-- **Services Layer**: Business logic and n8n integration logic
+- **Services Layer**: Business logic and n8n integration logic, utilizing the jsonrepair library for advanced JSON repair functionality
 - **Configuration Layer**: UI properties and node metadata
 - **Presentation Layer**: Thin n8n integration layer
 
@@ -45,6 +46,7 @@ The JSON Sanitizer node supports the following operations:
   - Parsed Object: Return the parsed JSON object
   - Cleaned String: Return the sanitized JSON string
   - Both: Return both the parsed object and metadata
+  - Smart Repair: Automatically fix malformed JSON using advanced repair techniques
 
 ## Credentials
 
@@ -54,6 +56,12 @@ This node does not require any credentials.
 
 - Minimum n8n version: 1.0.0
 - Tested with n8n versions: 1.x
+
+## Dependencies
+
+This node uses the following external dependencies:
+
+- **jsonrepair**: A robust JSON repair library for automatically fixing malformed JSON strings
 
 ## Usage
 
