@@ -84,3 +84,4 @@ The node supports dot notation for nested fields (e.g., `body.content`) and can 
 - 0.1.1: Refactored to clean layered architecture with improved maintainability
 - 0.1.2: Switched to jsonrepair for robust repair; updated tests and improved fallback for unparseable input.
 - 0.1.3: Improved JSON Sanitizer robustness with multi-stage parsing and repair, clearer error diagnostics, and reliable handling of bad control characters and malformed JSON.
+- 0.1.4: Fixed JSON sanitization error caused by overly aggressive comment removal and poor control character handling - URLs with // are now preserved correctly, unescaped control characters are handled gracefully, and malformed JSON repair is more robust

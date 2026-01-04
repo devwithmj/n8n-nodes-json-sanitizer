@@ -74,6 +74,21 @@ describe('sanitizeJSON', () => {
 			expect(result.wasRepaired).toBe(true);
 		});
 
+		test('should handle JSON with control characters in regular sanitize mode', () => {
+			// Create a JSON string with actual control characters (not escaped)
+			const inputWithControlChars = JSON.stringify({
+				url: 'https://example.com\ninvalid',
+				title: 'Job\tTitle'
+			}).replace('\\n', '\n').replace('\\t', '\t'); // Replace escaped with actual control chars
+			
+			const result = sanitizeJSON(inputWithControlChars);
+
+			const parsed = result.parsed as any;
+			expect(parsed.url).toBe('https://example.com\ninvalid');
+			expect(parsed.title).toBe('Job\tTitle');
+			expect(result.wasAlreadyParsed).toBe(false);
+		});
+
 		test('should handle malformed job listings JSON with truncated URLs', () => {
 			const input = '[ { "id": "item-12345", "source": "example", "url": "https: ", "direct_url": "https: ", "name": "Sample Item", "provider": "Example Corp"...';
 			const result = sanitizeJSON(input);

@@ -243,9 +243,22 @@ export class JsonSanitizationService {
 	 * @returns String without comments
 	 */
 	private removeComments(input: string): string {
-		return input
-			.replace(/\/\*[\s\S]*?\*\//g, '')
-			.replace(/\/\/.*/g, '');
+		// Remove block comments first
+		let result = input.replace(/\/\*[\s\S]*?\*\//g, '');
+		
+		// For line comments, be more careful to avoid removing URLs
+		// Split by lines and process each line
+		return result.replace(/^(.*?)\/\/.*$/gm, (match, beforeComment) => {
+			// Only remove the comment if // appears outside of quoted strings
+			// Simple heuristic: count unescaped quotes before //
+			const quotesBeforeComment = (beforeComment.match(/(?<!\\)"/g) || []).length;
+			// If even number of quotes, we're outside a string, so remove comment
+			if (quotesBeforeComment % 2 === 0) {
+				return beforeComment;
+			}
+			// If odd number of quotes, we're inside a string, keep the line as-is
+			return match;
+		});
 	}
 
 	/**
@@ -258,6 +271,20 @@ export class JsonSanitizationService {
 	}
 
 	/**
+	 * Escapes control characters within JSON string values
+	 * @param input - The input string
+	 * @returns String with escaped control characters
+	 */
+	private escapeControlCharacters(input: string): string {
+		// Only escape the most common problematic control characters
+		// that break JSON parsing: unescaped newlines and tabs
+		return input
+			.replace(/\n/g, '\\n')
+			.replace(/\r/g, '\\r')
+			.replace(/\t/g, '\\t');
+	}
+
+	/**
 	 * Parses JSON string with enhanced error reporting
 	 * @param input - The JSON string to parse
 	 * @returns Parsed object
@@ -267,6 +294,16 @@ export class JsonSanitizationService {
 		try {
 			return JSON.parse(input);
 		} catch (error) {
+			// Try escaping control characters first if not already done
+			try {
+				const controlEscaped = this.escapeControlCharacters(input);
+				if (controlEscaped !== input) {
+					return JSON.parse(controlEscaped);
+				}
+			} catch (controlError) {
+				// Continue to other fallbacks
+			}
+
 			// Try jsonrepair as fallback
 			try {
 				const repaired = jsonrepair(input);
