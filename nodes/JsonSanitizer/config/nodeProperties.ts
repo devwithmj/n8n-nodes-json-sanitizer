@@ -16,6 +16,7 @@ export const nodeProperties: INodeProperties[] = [
 		required: true,
 		description: 'The field containing the JSON string or object to sanitize',
 		placeholder: 'e.g., data or body.content',
+		noDataExpression: true,
 	},
 	{
 		displayName: 'Output Mode',
@@ -38,7 +39,7 @@ export const nodeProperties: INodeProperties[] = [
 				description: 'Output both parsed object and metadata',
 			},
 			{
-				name: 'Smart Repair (Experimental)',
+				name: 'Smart Repair',
 				value: 'repair',
 				description: 'Attempt to automatically fix malformed JSON',
 			},
@@ -53,6 +54,7 @@ export const nodeProperties: INodeProperties[] = [
 		default: 'sanitized',
 		required: true,
 		description: 'The field name to store the sanitized result',
+		noDataExpression: true,
 	},
 	{
 		displayName: 'Keep Original',
