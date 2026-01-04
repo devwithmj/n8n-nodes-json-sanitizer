@@ -13,7 +13,7 @@
     },
     "repository": {
         "type": "git",
-        "url": "https://github.com/yourusername/n8n-nodes-json-sanitizer.git"
+        "url": "https://github.com/devwithmj/n8n-nodes-json-sanitizer.git"
     },
     "scripts": {
         "build": "n8n-node build",
