@@ -11,6 +11,17 @@ The JSON Sanitizer node can handle:
 - Inconsistent line endings
 - Already parsed JSON objects
 
+## Architecture
+
+This project follows a clean, layered architecture that separates concerns for better maintainability and testability:
+
+- **Types Layer**: Centralized type definitions and interfaces
+- **Services Layer**: Business logic and n8n integration logic
+- **Configuration Layer**: UI properties and node metadata
+- **Presentation Layer**: Thin n8n integration layer
+
+For detailed architecture documentation, see [`nodes/JsonSanitizer/README.md`](nodes/JsonSanitizer/README.md).
+
 [n8n](https://n8n.io/) is a [fair-code licensed](https://docs.n8n.io/sustainable-use-license/) workflow automation platform.
 
 [Installation](#installation)
@@ -62,3 +73,4 @@ The node supports dot notation for nested fields (e.g., `body.content`) and can 
 ## Version history
 
 - 0.1.0: Initial release with basic JSON sanitization features
+- 0.1.1: Refactored to clean, layered architecture with improved maintainability
