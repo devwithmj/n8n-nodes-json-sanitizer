@@ -6,6 +6,39 @@ import { jsonrepair } from 'jsonrepair';
 import { SanitizeResult } from '../types';
 
 /**
+ * Basic JSON repair functionality for cases where jsonrepair might not be available
+ * @param input - The input string to repair
+ * @returns Repaired JSON string
+ */
+function basicJsonRepair(input: string): string {
+	let repaired = input.trim();
+
+	// If the input is completely invalid and doesn't look like JSON at all,
+	// wrap it in quotes to make it a valid JSON string
+	if (!repaired.match(/^\s*(\[|\{|")/)) {
+		return `"${repaired.replace(/"/g, '\\"')}"`;
+	}
+
+	// Remove comments (/* */ and //)
+	repaired = repaired.replace(/\/\*[\s\S]*?\*\//g, '');
+	repaired = repaired.replace(/\/\/.*$/gm, '');
+
+	// Replace single quotes with double quotes (basic approach)
+	repaired = repaired.replace(/'([^']*)'/g, '"$1"');
+
+	// Add missing commas between properties in objects
+	repaired = repaired.replace(/"\s+"/g, '", "'); // Add comma between quoted strings
+
+	// Add quotes around unquoted keys
+	repaired = repaired.replace(/([{,]\s*)([a-zA-Z_$][a-zA-Z0-9_$]*)\s*:/g, '$1"$2":');
+
+	// Remove trailing commas before } or ]
+	repaired = repaired.replace(/,(\s*[}\]])/g, '$1');
+
+	return repaired;
+}
+
+/**
  * Service responsible for JSON sanitization operations
  */
 export class JsonSanitizationService {
@@ -85,16 +118,25 @@ export class JsonSanitizationService {
 				wasAlreadyParsed: false,
 				wasRepaired,
 			};
-		} catch (basicRepairError) {
-			// If jsonrepair fails, try normal sanitization as final fallback
+		} catch (jsonRepairError) {
+			// If jsonrepair fails, try basic repair as fallback
 			try {
-				return this.sanitizeString(input);
-			} catch (sanitizeError) {
+				const basicRepairedString = basicJsonRepair(input);
+				const parsed = JSON.parse(basicRepairedString);
+
+				return {
+					cleanedString: basicRepairedString,
+					parsed,
+					original: input,
+					wasAlreadyParsed: false,
+					wasRepaired: true,
+				};
+			} catch (basicError) {
 				// If both methods fail, provide comprehensive error
 				throw new Error(
 					`Failed to repair JSON with all methods:\n` +
-					`- Basic repair error: ${(basicRepairError as Error).message}\n` +
-					`- Sanitization error: ${(sanitizeError as Error).message}`
+					`- JSON Repair error: ${(jsonRepairError as Error).message}\n` +
+					`- Basic repair error: ${(basicError as Error).message}`
 				);
 			}
 		}
@@ -230,10 +272,18 @@ export class JsonSanitizationService {
 				const repaired = jsonrepair(input);
 				return JSON.parse(repaired);
 			} catch (repairError) {
-				const preview = input.length > 200 ? input.substring(0, 200) + '...' : input;
-				throw new Error(
-					`Failed to parse JSON after sanitization: ${(error as Error).message}\n\nCleaned string preview: ${preview}`
-				);
+				// Try basic repair as final fallback
+				try {
+					const basicRepaired = basicJsonRepair(input);
+					return JSON.parse(basicRepaired);
+				} catch (basicError) {
+					const preview = input.length > 200 ? input.substring(0, 200) + '...' : input;
+					throw new Error(
+						`Failed to parse JSON after sanitization: ${(error as Error).message}\n\n` +
+						`Cleaned string preview: ${preview}\n\n` +
+						`Suggestion: Try using "Smart Repair" output mode for malformed JSON, or check if your input contains unescaped special characters.`
+					);
+				}
 			}
 		}
 	}

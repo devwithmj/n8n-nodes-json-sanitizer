@@ -1,20 +1,20 @@
 # n8n-nodes-json-sanitizer
 
-This is an n8n community node. It provides a JSON Sanitizer node for cleaning and normalizing JSON data from various input formats.
+This is an n8n community node. It provides a JSON Sanitizer for cleaning and normalizing JSON from various input formats.
 
 The JSON Sanitizer node can handle:
 - JSON strings with BOM (Byte Order Mark)
 - Markdown code fences wrapping JSON
-- Doubly-escaped JSON strings
+- Doubly escaped JSON strings
 - Trailing commas
 - JavaScript-style comments (// and /* */)
-- Inconsistent line endings
+- Inconsistent line breaks
 - Already parsed JSON objects
-- **Smart Repair**: Automatically fix malformed JSON using the jsonrepair library
+- **Smart Repair**: Automatically fixes malformed JSON using the jsonrepair library
 
 ## Architecture
 
-This project follows a clean, layered architecture that separates concerns for better maintainability and testability:
+This project follows a clean layered architecture that separates concerns for better maintainability and testability:
 
 - **Types Layer**: Centralized type definitions and interfaces
 - **Services Layer**: Business logic and n8n integration logic, utilizing the jsonrepair library for advanced JSON repair functionality
@@ -42,7 +42,7 @@ Follow the [installation guide](https://docs.n8n.io/integrations/community-nodes
 The JSON Sanitizer node supports the following operations:
 
 - **Sanitize JSON**: Clean and normalize JSON input from various formats
-- **Output Modes**:
+- **Output modes**:
   - Parsed Object: Return the parsed JSON object
   - Cleaned String: Return the sanitized JSON string
   - Both: Return both the parsed object and metadata
@@ -50,12 +50,12 @@ The JSON Sanitizer node supports the following operations:
 
 ## Credentials
 
-This node does not require any credentials.
+No credentials required.
 
 ## Compatibility
 
 - Minimum n8n version: 1.0.0
-- Tested with n8n versions: 1.x
+- Tested on n8n 1.x
 
 ## Dependencies
 
@@ -68,7 +68,7 @@ This node uses the following external dependencies:
 1. Add the JSON Sanitizer node to your workflow
 2. Configure the input field containing the JSON data
 3. Choose the desired output mode
-4. Set the output field name
+4. Set an output field name
 5. Optionally configure error handling behavior
 
 The node supports dot notation for nested fields (e.g., `body.content`) and can handle both string and object inputs.
@@ -81,5 +81,6 @@ The node supports dot notation for nested fields (e.g., `body.content`) and can 
 ## Version history
 
 - 0.1.0: Initial release with basic JSON sanitization features
-- 0.1.1: Refactored to clean, layered architecture with improved maintainability
-- 0.1.2: Switched to jsonrepair for robust JSON repair; updated tests and improved fallback for unparseable input.
+- 0.1.1: Refactored to clean layered architecture with improved maintainability
+- 0.1.2: Switched to jsonrepair for robust repair; updated tests and improved fallback for unparseable input.
+- 0.1.3: Improved JSON Sanitizer robustness with multi-stage parsing and repair, clearer error diagnostics, and reliable handling of bad control characters and malformed JSON.
