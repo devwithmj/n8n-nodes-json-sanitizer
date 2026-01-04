@@ -12,6 +12,7 @@ export interface SanitizeResult {
 	parsed: unknown;
 	original: unknown;
 	wasAlreadyParsed: boolean;
+	wasRepaired?: boolean;
 }
 
 /**
@@ -19,7 +20,7 @@ export interface SanitizeResult {
  */
 export interface NodeParameters {
 	inputField: string;
-	outputMode: 'parsed' | 'string' | 'both';
+	outputMode: 'parsed' | 'string' | 'both' | 'repair';
 	outputField: string;
 	keepOriginal: boolean;
 	errorHandling: 'stop' | 'continue';
@@ -49,7 +50,7 @@ export interface ProcessingResult {
 /**
  * Output modes for the sanitized JSON
  */
-export type OutputMode = 'parsed' | 'string' | 'both';
+export type OutputMode = 'parsed' | 'string' | 'both' | 'repair';
 
 /**
  * Error handling modes

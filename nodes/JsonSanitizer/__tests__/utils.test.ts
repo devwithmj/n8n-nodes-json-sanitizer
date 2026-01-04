@@ -1,4 +1,4 @@
-import { sanitizeJSON } from '../utils';
+import { sanitizeJSON, repairJSON } from '../utils';
 
 describe('sanitizeJSON', () => {
 	describe('valid inputs', () => {
@@ -159,6 +159,78 @@ describe('sanitizeJSON', () => {
 				null: null,
 				array: [1, 2, 3],
 				object: { nested: 'value' }
+			});
+		});
+	});
+
+	describe('repairJSON', () => {
+		describe('successful repairs', () => {
+			test('should repair JSON with missing quotes around keys', () => {
+				const input = '{name: "John", age: 30}';
+				const result = repairJSON(input);
+
+				expect(result.parsed).toEqual({ name: 'John', age: 30 });
+				expect(result.wasRepaired).toBe(true);
+				expect(result.wasAlreadyParsed).toBe(false);
+			});
+
+			test('should repair JSON with single quotes', () => {
+				const input = "{'name': 'John', 'age': 30}";
+				const result = repairJSON(input);
+
+				expect(result.parsed).toEqual({ name: 'John', age: 30 });
+				expect(result.wasRepaired).toBe(true);
+			});
+
+			test('should repair JSON with trailing commas', () => {
+				const input = '{"name": "John", "age": 30,}';
+				const result = repairJSON(input);
+
+				expect(result.parsed).toEqual({ name: 'John', age: 30 });
+				expect(result.wasRepaired).toBe(true);
+			});
+
+			test('should repair JSON with missing commas', () => {
+				const input = '{"name": "John" "age": 30}';
+				const result = repairJSON(input);
+
+				expect(result.parsed).toEqual({ name: 'John', age: 30 });
+				expect(result.wasRepaired).toBe(true);
+			});
+
+			test('should repair JSON with comments', () => {
+				const input = '{/* comment */ "name": "John", // another comment\n "age": 30}';
+				const result = repairJSON(input);
+
+				expect(result.parsed).toEqual({ name: 'John', age: 30 });
+				expect(result.wasRepaired).toBe(true);
+			});
+
+			test('should handle already valid JSON in repair mode', () => {
+				const input = '{"name": "John", "age": 30}';
+				const result = repairJSON(input);
+
+				expect(result.parsed).toEqual({ name: 'John', age: 30 });
+				expect(result.wasRepaired).toBe(false); // Should use normal sanitization
+				expect(result.wasAlreadyParsed).toBe(false);
+			});
+		});
+
+		describe('repair failures', () => {
+			test('should throw error for non-string input', () => {
+				expect(() => repairJSON(123 as unknown)).toThrow('Smart Repair mode requires string input');
+			});
+
+			test('should throw error for null input', () => {
+				expect(() => repairJSON(null as unknown)).toThrow('Smart Repair mode requires string input');
+			});
+
+			test('should handle completely invalid input by quoting it', () => {
+				const input = 'this is not json at all';
+				const result = repairJSON(input);
+
+				expect(result.parsed).toBe('this is not json at all'); // jsonrepair wraps invalid input in quotes
+				expect(result.wasRepaired).toBe(true);
 			});
 		});
 	});

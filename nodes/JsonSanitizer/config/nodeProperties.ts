@@ -37,6 +37,11 @@ export const nodeProperties: INodeProperties[] = [
 				value: 'both',
 				description: 'Output both parsed object and metadata',
 			},
+			{
+				name: 'Smart Repair (Experimental)',
+				value: 'repair',
+				description: 'Attempt to automatically fix malformed JSON',
+			},
 		],
 		default: 'parsed',
 		description: 'How to output the sanitized JSON',

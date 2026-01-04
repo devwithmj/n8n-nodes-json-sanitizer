@@ -75,7 +75,7 @@ export class NodeProcessor {
 	private async processItem(context: ProcessingContext): Promise<ProcessingResult> {
 		try {
 			const inputValue = this.extractInputValue(context);
-			const sanitizeResult = this.sanitizationService.sanitize(inputValue);
+			const sanitizeResult = this.processInputValue(inputValue, context.parameters);
 			const outputData = this.prepareOutputData(sanitizeResult, context.parameters);
 			const resultItem = this.createResultItem(outputData, context);
 
@@ -92,16 +92,31 @@ export class NodeProcessor {
 	}
 
 	/**
+	 * Processes input value based on the selected output mode
+	 */
+	private processInputValue(inputValue: unknown, parameters: NodeParameters): SanitizeResult {
+		if (parameters.outputMode === 'repair') {
+			// For repair mode, ensure we have a string input
+			if (typeof inputValue !== 'string') {
+				throw new Error('Smart Repair mode requires string input');
+			}
+			return this.sanitizationService.repair(inputValue);
+		} else {
+			// For other modes, use normal sanitization
+			return this.sanitizationService.sanitize(inputValue);
+		}
+	}
+
+	/**
 	 * Extracts input value from the specified field
 	 */
 	private extractInputValue(context: ProcessingContext): unknown {
-		const { item, parameters } = context;
-		let value: unknown = (item.json as Record<string, unknown>)[parameters.inputField];
+		let value: unknown = (context.item.json as Record<string, unknown>)[context.parameters.inputField];
 
 		// Handle dot notation (e.g., 'body.content')
-		if (parameters.inputField.includes('.')) {
-			const parts = parameters.inputField.split('.');
-			let current: unknown = item.json as Record<string, unknown>;
+		if (context.parameters.inputField.includes('.')) {
+			const parts = context.parameters.inputField.split('.');
+			let current: unknown = context.item.json as Record<string, unknown>;
 
 			for (const key of parts) {
 				current = (current as Record<string, unknown>)?.[key];
@@ -110,7 +125,7 @@ export class NodeProcessor {
 		}
 
 		if (value === undefined || value === null) {
-			throw new Error(`Field '${parameters.inputField}' not found in input data`);
+			throw new Error(`Field '${context.parameters.inputField}' not found in input data`);
 		}
 
 		return value;
@@ -130,7 +145,15 @@ export class NodeProcessor {
 					parsed: sanitizeResult.parsed,
 					cleanedString: sanitizeResult.cleanedString,
 					wasAlreadyParsed: sanitizeResult.wasAlreadyParsed,
+					wasRepaired: sanitizeResult.wasRepaired,
 					originalType: typeof sanitizeResult.original,
+				};
+			case 'repair':
+				return {
+					parsed: sanitizeResult.parsed,
+					repairedString: sanitizeResult.cleanedString,
+					wasRepaired: sanitizeResult.wasRepaired,
+					originalInput: sanitizeResult.original,
 				};
 			default:
 				throw new Error(`Unknown output mode: ${parameters.outputMode}`);
