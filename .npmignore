@@ -1,0 +1,43 @@
+# Source files (TypeScript)
+*.ts
+!*.d.ts
+
+# Development files and directories
+.github/
+.vscode/
+__tests__/
+*.test.ts
+*.spec.ts
+coverage/
+node_modules/
+
+# Development configuration
+.prettierrc.js
+eslint.config.mjs
+jest.config.js
+tsconfig.json
+.prettierignore
+
+# Build artifacts that shouldn't be published
+*.tsbuildinfo
+
+# Git and editor files
+.git/
+.gitignore
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Development documentation (keep README.md and LICENSE)
+CHANGELOG.md
+USAGE.md

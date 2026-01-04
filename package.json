@@ -1,11 +1,21 @@
 {
     "name": "n8n-nodes-json-sanitizer",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "n8n community node for JSON sanitization and normalization",
     "license": "MIT",
-    "homepage": "",
+    "homepage": "https://github.com/devwithmj/n8n-nodes-json-sanitizer#readme",
+    "bugs": {
+        "url": "https://github.com/devwithmj/n8n-nodes-json-sanitizer/issues"
+    },
     "keywords": [
-        "n8n-community-node-package"
+        "n8n-community-node-package",
+        "n8n",
+        "json",
+        "sanitizer",
+        "normalization",
+        "repair",
+        "automation",
+        "workflow"
     ],
     "author": {
         "name": "Majid Alahverdi",
@@ -13,7 +23,7 @@
     },
     "repository": {
         "type": "git",
-        "url": "https://github.com/devwithmj/n8n-nodes-json-sanitizer.git"
+        "url": "git+https://github.com/devwithmj/n8n-nodes-json-sanitizer.git"
     },
     "scripts": {
         "build": "n8n-node build",
@@ -23,7 +33,7 @@
         "lint:fix": "n8n-node lint --fix",
         "test": "jest",
         "release": "n8n-node release",
-        "prepublishOnly": "n8n-node prerelease"
+        "prepublishOnly": "npm run build && npm test"
     },
     "files": [
         "dist"
@@ -60,8 +70,5 @@
             "nodes/**/*.ts",
             "!nodes/**/*.node.ts"
         ]
-    },
-    "dependencies": {
-        "jsonrepair": "^3.13.1"
     }
 }
